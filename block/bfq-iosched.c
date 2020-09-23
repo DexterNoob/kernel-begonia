@@ -1612,7 +1612,7 @@ static void bfq_remove_request(struct request *rq)
 				    rq->cmd_flags);
 }
 
-static int bfq_merge(struct request_queue *q, struct request **req,
+static enum elv_merge bfq_merge(struct request_queue *q, struct request **req,
 		     struct bio *bio)
 {
 	struct bfq_data *bfqd = q->elevator->elevator_data;
@@ -1628,7 +1628,7 @@ static int bfq_merge(struct request_queue *q, struct request **req,
 }
 
 static void bfq_merged_request(struct request_queue *q, struct request *req,
-			       int type)
+			       enum elv_merge type)
 {
 	if (type == ELEVATOR_FRONT_MERGE &&
 	    rb_prev(&req->rb_node) &&
@@ -3956,7 +3956,7 @@ static void bfq_set_next_ioprio_data(struct bfq_queue *bfqq,
 	ioprio_class = IOPRIO_PRIO_CLASS(bic->ioprio);
 	switch (ioprio_class) {
 	default:
-		dev_err(bfqq->bfqd->queue->backing_dev_info.dev,
+		dev_err(bfqq->bfqd->queue->backing_dev_info->dev,
 			"bfq: bad prio class %d\n", ioprio_class);
 	case IOPRIO_CLASS_NONE:
 		/*
@@ -4489,7 +4489,7 @@ static int __bfq_may_queue(struct bfq_queue *bfqq)
 	return ELV_MQUEUE_MAY;
 }
 
-static int bfq_may_queue(struct request_queue *q, int op, int op_flags)
+static int bfq_may_queue(struct request_queue *q,unsigned int op)
 {
 	struct bfq_data *bfqd = q->elevator->elevator_data;
 	struct task_struct *tsk = current;
@@ -4506,7 +4506,7 @@ static int bfq_may_queue(struct request_queue *q, int op, int op_flags)
 	if (!bic)
 		return ELV_MQUEUE_MAY;
 
-	bfqq = bic_to_bfqq(bic, rw_is_sync(op, op_flags));
+	bfqq = bic_to_bfqq(bic, op_is_sync(op));
 	if (bfqq)
 		return __bfq_may_queue(bfqq);
 
@@ -5224,7 +5224,7 @@ static struct elv_fs_entry bfq_attrs[] = {
 };
 
 static struct elevator_type iosched_bfq = {
-	.ops = {
+	.ops.sq = {
 		.elevator_merge_fn =		bfq_merge,
 		.elevator_merged_fn =		bfq_merged_request,
 		.elevator_merge_req_fn =	bfq_merged_requests,
