@@ -208,34 +208,38 @@ static void bfqg_put(struct bfq_group *bfqg)
 
 static void bfqg_stats_update_io_add(struct bfq_group *bfqg,
 				     struct bfq_queue *bfqq,
-				     int rw)
+				     int op, int op_flags)
 {
-	blkg_rwstat_add(&bfqg->stats.queued, rw, 1);
+	blkg_rwstat_add(&bfqg->stats.queued, op, op_flags, 1);
 	bfqg_stats_end_empty_time(&bfqg->stats);
 	if (!(bfqq == ((struct bfq_data *)bfqg->bfqd)->in_service_queue))
 		bfqg_stats_set_start_group_wait_time(bfqg, bfqq_group(bfqq));
 }
 
-static void bfqg_stats_update_io_remove(struct bfq_group *bfqg, int rw)
+static void bfqg_stats_update_io_remove(struct bfq_group *bfqg, int op,
+					int op_flags)
 {
-	blkg_rwstat_add(&bfqg->stats.queued, rw, -1);
+	blkg_rwstat_add(&bfqg->stats.queued, op, op_flags, -1);
 }
 
-static void bfqg_stats_update_io_merged(struct bfq_group *bfqg, int rw)
+static void bfqg_stats_update_io_merged(struct bfq_group *bfqg,  int op,
+					int op_flags)
 {
-	blkg_rwstat_add(&bfqg->stats.merged, rw, 1);
+	blkg_rwstat_add(&bfqg->stats.merged, op, op_flags, 1);
 }
 
 static void bfqg_stats_update_completion(struct bfq_group *bfqg,
-			uint64_t start_time, uint64_t io_start_time, int rw)
+			uint64_t start_time, uint64_t io_start_time, int op,
+			int op_flags)
 {
 	struct bfqg_stats *stats = &bfqg->stats;
 	unsigned long long now = sched_clock();
 
 	if (time_after64(now, io_start_time))
-		blkg_rwstat_add(&stats->service_time, rw, now - io_start_time);
+		blkg_rwstat_add(&stats->service_time, op, op_flags,
+				now - io_start_time);
 	if (time_after64(io_start_time, start_time))
-		blkg_rwstat_add(&stats->wait_time, rw,
+		blkg_rwstat_add(&stats->wait_time, op, op_flags,
 				io_start_time - start_time);
 }
 
@@ -428,7 +432,6 @@ static void bfq_pd_free(struct blkg_policy_data *pd)
 	struct bfq_group *bfqg = pd_to_bfqg(pd);
 
 	bfqg_stats_exit(&bfqg->stats);
-
 	return kfree(bfqg);
 }
 
@@ -443,6 +446,10 @@ static void bfq_group_set_parent(struct bfq_group *bfqg,
 				 struct bfq_group *parent)
 {
 	struct bfq_entity *entity;
+	BUG_ON(!parent);
+	BUG_ON(!bfqg);
+	BUG_ON(bfqg == parent);
+
 	BUG_ON(!parent);
 	BUG_ON(!bfqg);
 	BUG_ON(bfqg == parent);
@@ -977,7 +984,8 @@ static int bfqg_print_avg_queue_size(struct seq_file *sf, void *v)
 	return 0;
 }
 
-static struct bfq_group *bfq_create_group_hierarchy(struct bfq_data *bfqd, int node)
+static struct bfq_group *
+bfq_create_group_hierarchy(struct bfq_data *bfqd, int node)
 {
 	int ret;
 
@@ -1116,13 +1124,14 @@ static struct cftype bfq_blkg_files[] = {
 #else /* CONFIG_BFQ_GROUP_IOSCHED */
 
 static inline void bfqg_stats_update_io_add(struct bfq_group *bfqg,
-			struct bfq_queue *bfqq, int rw) { }
-static inline void bfqg_stats_update_io_remove(struct bfq_group *bfqg,
-					       int rw) { }
-static inline void bfqg_stats_update_io_merged(struct bfq_group *bfqg,
-					       int rw) { }
+			struct bfq_queue *bfqq, int op, int op_flags) { }
+static inline void
+bfqg_stats_update_io_remove(struct bfq_group *bfqg, int op, int op_flags) { }
+static inline void
+bfqg_stats_update_io_merged(struct bfq_group *bfqg, int op, int op_flags) { }
 static inline void bfqg_stats_update_completion(struct bfq_group *bfqg,
-			uint64_t start_time, uint64_t io_start_time, int rw) { }
+			uint64_t start_time, uint64_t io_start_time, int op,
+			int op_flags) { }
 static inline void
 bfqg_stats_set_start_group_wait_time(struct bfq_group *bfqg,
 				     struct bfq_group *curr_bfqg) { }
