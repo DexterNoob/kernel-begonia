@@ -124,8 +124,8 @@ ifeq ($(CONFIG_MTK_FTRACE_DEFAULT_ENABLE),y)
 ccflags-y += -DENABLE_GED_SYSTRACE_UTIL
 endif
 
-
 ccflags-y += -DGED_DVFS_DEBUG_BUF
+ccflags-y += -DGED_SKI_SUPPORT
 
 ifeq ($(VER),eng)
 ccflags-y += -DGED_DEBUG_IOCTL_LOCK
@@ -153,5 +153,5 @@ ged-y += \
 	src/ged_dvfs.o \
 	src/ged_kpi.o \
 	src/ged_fdvfs.o \
-	src/ged_gpu_tuner.o
-
+	src/ged_gpu_tuner.o \
+	src/ged_ski.o

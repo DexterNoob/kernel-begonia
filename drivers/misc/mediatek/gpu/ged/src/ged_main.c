@@ -47,6 +47,10 @@
 #include "ged_ge.h"
 #include "ged_gpu_tuner.h"
 
+#ifdef GED_SKI_SUPPORT
+#include "ged_ski.h"
+#endif
+
 #define GED_DRIVER_DEVICE_NAME "ged"
 #ifndef GED_BUFFER_LOG_DISABLE
 #ifdef GED_DEBUG
@@ -352,6 +356,10 @@ static void ged_exit(void)
 	ghLogBuf_HWC = 0;
 #endif
 
+#ifdef GED_SKI_SUPPORT
+	ged_ski_exit();
+#endif
+
 	ged_fdvfs_exit();
 
 #ifdef MTK_FRR20
@@ -455,6 +463,15 @@ static int ged_init(void)
 		goto ERROR;
 	}
 #endif
+
+#ifdef GED_SKI_SUPPORT
+	err = ged_ski_init();
+	if (unlikely(err != GED_OK)) {
+		GED_LOGE("ged: failed to init ski!\n");
+		goto ERROR;
+	}
+#endif
+
 #ifndef GED_BUFFER_LOG_DISABLE
 	/* common gpu info buffer */
 	ged_log_buf_alloc(1024, 64 * 1024, GED_LOG_BUF_TYPE_RINGBUFFER, "gpuinfo", "gpuinfo");
