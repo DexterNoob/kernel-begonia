@@ -2933,11 +2933,6 @@ mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy
 		DBGLOG(QM, ERROR, "prParams is NULL, data=%p, len=%d\n",
 		       data, len);
 		return -EINVAL;
-	} else if (prParams->aucMacAddr == NULL) {
-		DBGLOG(QM, ERROR,
-		       "prParams->aucMacAddr is NULL, data=%p, len=%d\n",
-		       data, len);
-		return -EINVAL;
 	}
 
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy,
