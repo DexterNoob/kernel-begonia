@@ -16,6 +16,7 @@
 #include "ged_ski.h"
 
 static struct kobject *gpu_kobj;
+static struct kobject *ged_kobj;
 
 ssize_t gpu_available_governor_show(struct kobject *kobj,
 		struct kobj_attribute *attr, char *buf)
@@ -108,10 +109,10 @@ static ssize_t gpu_max_clock_store(struct kobject *kobj,
 	int idx = 0;
 	int index_count = 0;
 
-	char acBuffer[GED_SYSFS_MAX_BUFF_SIZE];
+	char acBuffer[GED_SKI_MAX_BUFF_SIZE];
 
-	if ((count > 0) && (count < GED_SYSFS_MAX_BUFF_SIZE)) {
-		if (scnprintf(acBuffer, GED_SYSFS_MAX_BUFF_SIZE, "%s", buf)) {
+	if ((count > 0) && (count < GED_SKI_MAX_BUFF_SIZE)) {
+		if (scnprintf(acBuffer, GED_SKI_MAX_BUFF_SIZE, "%s", buf)) {
 			if (kstrtoint(acBuffer, 0, &max_freq) == 0) {
 				if (max_freq <= 0)
 					return -EINVAL;
@@ -162,10 +163,10 @@ static ssize_t gpu_min_clock_store(struct kobject *kobj,
 	int idx = 0;
 	int index_count = 0;
 
-	char acBuffer[GED_SYSFS_MAX_BUFF_SIZE];
+	char acBuffer[GED_SKI_MAX_BUFF_SIZE];
 
-	if ((count > 0) && (count < GED_SYSFS_MAX_BUFF_SIZE)) {
-		if (scnprintf(acBuffer, GED_SYSFS_MAX_BUFF_SIZE, "%s", buf)) {
+	if ((count > 0) && (count < GED_SKI_MAX_BUFF_SIZE)) {
+		if (scnprintf(acBuffer, GED_SKI_MAX_BUFF_SIZE, "%s", buf)) {
 			if (kstrtoint(acBuffer, 0, &min_freq) == 0) {
 				if (min_freq <= 0)
 					return -EINVAL;
@@ -221,6 +222,30 @@ ssize_t gpu_tmu_show(struct kobject *kobj,
 
 static KOBJ_ATTR_RO(gpu_tmu);
 
+GED_ERROR ged_ski_create_file(struct kobject *parent,
+		struct kobj_attribute *kobj_attr)
+{
+	if (kobj_attr == NULL)
+		return GED_ERROR_INVALID_PARAMS;
+
+	parent = (parent != NULL) ? parent : ged_kobj;
+	if (sysfs_create_file(parent, &(kobj_attr->attr))) {
+		GED_LOGE("Failed to create ski file\n");
+		return GED_ERROR_FAIL;
+	}
+
+	return GED_OK;
+}
+
+void ged_ski_remove_file(struct kobject *parent,
+		struct kobj_attribute *kobj_attr)
+{
+	if (kobj_attr == NULL)
+		return;
+	parent = (parent != NULL) ? parent : ged_kobj;
+	sysfs_remove_file(parent, &(kobj_attr->attr));
+}
+
 GED_ERROR ged_ski_init(void)
 {
 	int ret = GED_OK;
@@ -232,55 +257,55 @@ GED_ERROR ged_ski_init(void)
 		goto EXIT;
 	}
 
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_available_governor);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_available_governor);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_available_governor!\n");
 		goto EXIT;
 	}
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_busy);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_busy);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_busy!\n");
 		goto EXIT;
 	}
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_clock);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_clock);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_clock!\n");
 		goto EXIT;
 	}
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_freq_table);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_freq_table);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_freq_table!\n");
 		goto EXIT;
 	}
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_governor);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_governor);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_governor!\n");
 		goto EXIT;
 	}
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_max_clock);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_max_clock);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_max_clock!\n");
 		goto EXIT;
 	}
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_min_clock);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_min_clock);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_min_clock!\n");
 		goto EXIT;
 	}
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_model);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_model);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_model!\n");
 		goto EXIT;
 	}
-	ret = ged_sysfs_create_file(gpu_kobj, &kobj_attr_gpu_tmu);
+	ret = ged_ski_create_file(gpu_kobj, &kobj_attr_gpu_tmu);
 	if (ret) {
 		ret = GED_ERROR_OOM;
 		GED_LOGE("ged: failed to create gpu_tmu!\n");
@@ -296,15 +321,15 @@ EXIT:
 
 void ged_ski_exit(void)
 {
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_available_governor);
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_busy);
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_clock);
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_freq_table);
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_governor);
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_max_clock);
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_min_clock);
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_model);
-	ged_sysfs_remove_file(gpu_kobj, &kobj_attr_gpu_tmu);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_available_governor);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_busy);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_clock);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_freq_table);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_governor);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_max_clock);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_min_clock);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_model);
+	ged_ski_remove_file(gpu_kobj, &kobj_attr_gpu_tmu);
 	kobject_put(gpu_kobj);
 	gpu_kobj = NULL;
 }
