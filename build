@@ -11,10 +11,10 @@ gcc="$(pwd)/../gcc"
 Any="$(pwd)/../AnyKernel3"
 
 # Upload to telegram
-UT=0
+UT=1
 if [ $UT = 1 ]; then
-    BOT_TOKEN=""
-    CHAT_ID=""
+    BOT_TOKEN="5179917277:AAF6pJgTWbt3Oa-ZzvLwTIDnOigcQaCd2xY"
+    CHAT_ID="-1001545016053"
 fi
 
 msg() {
@@ -87,7 +87,7 @@ Clone_Proton() {
         msg
     fi
     if [ ! -d $Proton ]; then
-        git clone --depth=1 https://github.com/kdrag0n/proton-clang -b master $Proton
+        git clone --depth=1 https://gitlab.com/varunhardgamer/trb_clang.git -b 15 $Proton
     else
         cd $Proton
         git fetch origin master
@@ -174,7 +174,7 @@ Build_GCC() {
 }
 
 Build_Proton() {
-    Compiler=Proton
+    Compiler=TRB
     if [ $UT = 1 ]; then
         Text="<b>Device</b>: <code>Redmi Note 8 Pro [BEGONIA]</code>%0A<b>Branch</b>: <code>$(git branch | grep '*' | awk '{ print $2 }')</code>%0A<b>Kernel name</b>: <code>$(cat "arch/arm64/configs/begonia_user_defconfig" | grep "CONFIG_LOCALVERSION=" | sed 's/CONFIG_LOCALVERSION="-*//g' | sed 's/"*//g' )</code>%0A<b>Kernel version</b>: <code>4.14.$(cat "Makefile" | grep "SUBLEVEL =" | sed 's/SUBLEVEL = *//g')</code>%0A<b>Build user</b>: <code>$KBUILD_BUILD_USER</code>%0A<b>Build host</b>: <code>$KBUILD_BUILD_HOST</code>%0A<b>Compiler</b>:%0A<code>$Proton_Version</code>%0A<b>Changelogs</b>:%0A<code>$(git log --oneline -5 --no-decorate)</code>"
         msg
