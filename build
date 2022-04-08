@@ -218,6 +218,13 @@ Build_DTC() {
                             CROSS_COMPILE=aarch64-linux-android- \
                             CROSS_COMPILE_ARM32=arm-linux-androideabi- \
                             CLANG_TRIPLE=aarch64-linux-gnu-
+			    AS=llvm-as \
+			    NM=llvm-nm \
+			    OBJCOPY=llvm-objcopy \
+			    OBJDUMP=llvm-objdump \
+			    STRIP=llvm-strip \
+			    AR=llvm-ar \
+
 }
 
 # End with success or fail
