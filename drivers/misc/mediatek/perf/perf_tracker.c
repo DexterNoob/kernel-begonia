@@ -140,6 +140,34 @@ u32 __attribute__((weak)) qos_sram_read(u32 offset)
 	return 0;
 }
 
+
+int __attribute__((weak)) get_cur_vcore_uv(void)
+{
+	return 0;
+}
+
+int __attribute__((weak)) get_cur_ddr_khz(void)
+{
+	return 0;
+}
+
+unsigned int __attribute__((weak)) qos_rec_get_hist_bw(unsigned int idx, unsigned int type)
+{
+	return 0;
+}
+
+unsigned int __attribute__((weak)) qos_rec_get_hist_data_bw(unsigned int idx, unsigned int type)
+{
+	return 0;
+}
+
+unsigned int __attribute__((weak)) qos_rec_get_hist_idx(void)
+{
+	return 0xFFFF;
+}
+
+
+
 static inline u32 cpu_stall_ratio(int cpu)
 {
 #ifdef CM_STALL_RATIO_OFFSET
