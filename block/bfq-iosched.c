@@ -233,7 +233,7 @@ static struct request *bfq_choose_req(struct bfq_data *bfqd,
 	unsigned long back_max;
 #define BFQ_RQ1_WRAP	0x01 /* request 1 wraps */
 #define BFQ_RQ2_WRAP	0x02 /* request 2 wraps */
-	unsigned wrap = 0; /* bit mask: requests behind the disk head? */
+	unsigned int wrap = 0; /* bit mask: requests behind the disk head? */
 
 	if (!rq1 || rq1 == rq2)
 		return rq2;
@@ -288,12 +288,11 @@ static struct request *bfq_choose_req(struct bfq_data *bfqd,
 			return rq1;
 		else if (d2 < d1)
 			return rq2;
-		else {
-			if (s1 >= s2)
-				return rq1;
-			else
-				return rq2;
-		}
+
+		if (s1 >= s2)
+			return rq1;
+		else
+			return rq2;
 
 	case BFQ_RQ2_WRAP:
 		return rq1;
@@ -703,8 +702,8 @@ bfq_bfqq_resume_state(struct bfq_queue *bfqq, struct bfq_io_cq *bic)
 	BUG_ON(time_is_after_jiffies(bfqq->last_wr_start_finish));
 
 	if (bfqq->wr_coeff > 1 && (bfq_bfqq_in_large_burst(bfqq) ||
-				   time_is_before_jiffies(bfqq->last_wr_start_finish +
-							  bfqq->wr_cur_max_time))) {
+	    time_is_before_jiffies(bfqq->last_wr_start_finish +
+				   bfqq->wr_cur_max_time))) {
 		bfq_log_bfqq(bfqq->bfqd, bfqq,
 			     "resume state: switching off wr (%lu + %lu < %lu)",
 			     bfqq->last_wr_start_finish, bfqq->wr_cur_max_time,
@@ -1461,7 +1460,6 @@ static void bfq_add_request(struct request *rq)
 			bfqq->wr_cur_max_time = bfq_wr_duration(bfqd);
 
 			bfqd->wr_busy_queues++;
-			BUG_ON(bfqd->wr_busy_queues > bfqd->busy_queues);
 			bfqq->entity.prio_changed = 1;
 			bfq_log_bfqq(bfqd, bfqq,
 				     "non-idle wrais starting, "
@@ -1685,7 +1683,7 @@ static void bfq_merged_requests(struct request_queue *q, struct request *rq,
 	 */
 	if (bfqq == next_bfqq &&
 	    !list_empty(&rq->queuelist) && !list_empty(&next->queuelist) &&
-	    time_before((unsigned long)next->fifo_time, (unsigned long)rq->fifo_time)) {
+	    next->fifo_time < rq->fifo_time) {
 		list_del_init(&rq->queuelist);
 		list_replace_init(&next->queuelist, &rq->queuelist);
 		rq->fifo_time = next->fifo_time;
@@ -1706,8 +1704,6 @@ static void bfq_bfqq_end_wr(struct bfq_queue *bfqq)
 
 	if (bfq_bfqq_busy(bfqq))
 		bfqq->bfqd->wr_busy_queues--;
-		BUG_ON(bfqq->bfqd->wr_busy_queues < 0);
-	}
 	bfqq->wr_coeff = 1;
 	bfqq->wr_cur_max_time = 0;
 	bfqq->last_wr_start_finish = jiffies;
@@ -2086,11 +2082,8 @@ bfq_merge_bfqqs(struct bfq_data *bfqd, struct bfq_io_cq *bic,
 		new_bfqq->last_wr_start_finish = bfqq->last_wr_start_finish;
 		new_bfqq->wr_start_at_switch_to_srt =
 			bfqq->wr_start_at_switch_to_srt;
-		if (bfq_bfqq_busy(new_bfqq)) {
+		if (bfq_bfqq_busy(new_bfqq))
 			bfqd->wr_busy_queues++;
-			BUG_ON(bfqd->wr_busy_queues > bfqd->busy_queues);
-		}
-
 		new_bfqq->entity.prio_changed = 1;
 		bfq_log_bfqq(bfqd, new_bfqq,
 			     "wr start after merge with %d, rais_max_time %u",
@@ -2101,11 +2094,8 @@ bfq_merge_bfqqs(struct bfq_data *bfqd, struct bfq_io_cq *bic,
 	if (bfqq->wr_coeff > 1) { /* bfqq has given its wr to new_bfqq */
 		bfqq->wr_coeff = 1;
 		bfqq->entity.prio_changed = 1;
-		if (bfq_bfqq_busy(bfqq)) {
+		if (bfq_bfqq_busy(bfqq))
 			bfqd->wr_busy_queues--;
-			BUG_ON(bfqd->wr_busy_queues < 0);
-		}
-
 	}
 
 	bfq_log_bfqq(bfqd, new_bfqq, "merge_bfqqs: wr_busy %d",
@@ -3634,6 +3624,7 @@ keep_queue:
 static void bfq_update_wr_data(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 {
 	struct bfq_entity *entity = &bfqq->entity;
+
 	if (bfqq->wr_coeff > 1) { /* queue is being weight-raised */
 		BUG_ON(bfqq->wr_cur_max_time == bfqd->bfq_wr_rt_max_time &&
 		       time_is_after_jiffies(bfqq->last_wr_start_finish));
@@ -4600,6 +4591,7 @@ new_queue:
 				     bic->was_in_burst_list,
 				     bic->saved_in_large_burst,
 				     bfqd->large_burst);
+
 			if ((bic->was_in_burst_list && bfqd->large_burst) ||
 			    bic->saved_in_large_burst) {
 				bfq_log_bfqq(bfqd, bfqq,
@@ -4940,8 +4932,7 @@ out_free:
 
 static void bfq_slab_kill(void)
 {
-	if (bfq_pool)
-		kmem_cache_destroy(bfq_pool);
+	kmem_cache_destroy(bfq_pool);
 }
 
 static int __init bfq_slab_setup(void)
@@ -4954,7 +4945,7 @@ static int __init bfq_slab_setup(void)
 
 static ssize_t bfq_var_show(unsigned int var, char *page)
 {
-	return sprintf(page, "%d\n", var);
+	return sprintf(page, "%u\n", var);
 }
 
 static ssize_t bfq_var_store(unsigned long *var, const char *page,
@@ -4972,6 +4963,7 @@ static ssize_t bfq_var_store(unsigned long *var, const char *page,
 static ssize_t bfq_wr_max_time_show(struct elevator_queue *e, char *page)
 {
 	struct bfq_data *bfqd = e->elevator_data;
+
 	return sprintf(page, "%d\n", bfqd->bfq_wr_max_time > 0 ?
 		       jiffies_to_msecs(bfqd->bfq_wr_max_time) :
 		       jiffies_to_msecs(bfq_wr_duration(bfqd)));
