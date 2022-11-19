@@ -121,7 +121,7 @@ ZIP_KERNEL_VERSION="4.14.$(cat "$MainPath/Makefile" | grep "SUBLEVEL =" | sed 's
 # Start building
 
 Build_Dexter() {
-    Compiler=Clang-A13
+    Compiler=Clang-R
     if [ $UT = 1 ]; then
         Text="========================
  <b>Device</b>: <code>Redmi Note 8 Pro </code>%0A<b>Branch</b>: <code>$(git branch | grep '*' | awk '{ print $2 }')</code>%0A<b>Kernel name</b>: <code>$(cat "arch/arm64/configs/begonia_user_defconfig" | grep "CONFIG_LOCALVERSION=" | sed 's/CONFIG_LOCALVERSION="-*//g' | sed 's/"*//g' )</code>%0A<b>Kernel version</b>: <code>4.14.$(cat "Makefile" | grep "SUBLEVEL =" | sed 's/SUBLEVEL = *//g')</code>%0A<b>Build user</b>: <code>$KBUILD_BUILD_USER</code>%0A<b>Build host</b>: <code>$KBUILD_BUILD_HOST</code>%0A<b>Compiler</b>:%0A<code>$Dexter_Version</code>%0A<b>Changelogs</b>:%0A<code>$(git log --oneline -5 --no-decorate)</code>
@@ -155,7 +155,7 @@ Build_Dexter() {
 }
 
 Build_DTC() {
-    Compiler=DragonTC
+    Compiler=DTC-R
     if [ $UT = 1 ]; then
         Text="<b>Device</b>: <code>Redmi Note 8 Pro [BEGONIA]</code>%0A<b>Branch</b>: <code>$(git branch | grep '*' | awk '{ print $2 }')</code>%0A<b>Kernel name</b>: <code>$(cat "arch/arm64/configs/begonia_user_defconfig" | grep "CONFIG_LOCALVERSION=" | sed 's/CONFIG_LOCALVERSION="-*//g' | sed 's/"*//g' )</code>%0A<b>Kernel version</b>: <code>4.14.$(cat "Makefile" | grep "SUBLEVEL =" | sed 's/SUBLEVEL = *//g')</code>%0A<b>Build user</b>: <code>$KBUILD_BUILD_USER</code>%0A<b>Build host</b>: <code>$KBUILD_BUILD_HOST</code>%0A<b>Compiler</b>:%0A<code>$DTC_Version</code>%0A<b>Changelogs</b>:%0A<code>$(git log --oneline -5 --no-decorate)</code>"
         msg
