@@ -107,4 +107,18 @@ obj-$(CONFIG_DRM_MXSFB)	+= mxsfb/
 obj-$(CONFIG_DRM_TINYDRM) += tinydrm/
 obj-$(CONFIG_DRM_PL111) += pl111/
 
-obj-$(CONFIG_DRM_PANFROST) += panfrost/
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/dramc/$(MTK_PLATFORM)	\
+             -I$(srctree)/drivers/misc/mediatek/smi/			\
+             -I$(srctree)/drivers/misc/mediatek/mmp/			\
+             -I$(srctree)/drivers/misc/mediatek/mmdvfs/			\
+             -I$(srctree)/drivers/iommu/				\
+             -I$(srctree)/drivers/devfreq/				\
+             -I$(srctree)/drivers/gpu/drm/				\
+             -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/mach/				\
+             -I$(srctree)/drivers/misc/mediatek/include/mt-plat \
+             -I$(srctree)/drivers/misc/mediatek/leds/ \
+             -I$(srctree)/drivers/misc/mediatek/leds/$(MTK_PLATFORM)
+
+
+ccflags-$(CONFIG_DRM_MEDIATEK_BOMB) += -I$(srctree)/drivers/gpu/drm/mediatek/
+ccflags-$(CONFIG_DRM_MEDIATEK_CANNON) += -I$(srctree)/drivers/gpu/drm/mediatek_cannon/
