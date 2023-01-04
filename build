@@ -2,7 +2,8 @@
 
 # Defined path
 MainPath="$(pwd)"
-Dexter="$(pwd)/../Dexter"
+GCC64="$(pwd)/../GCC64"
+GCC="$(pwd)/../GCC"
 Any="$(pwd)/../AnyKernel3"
 
 # Upload to telegram
@@ -30,40 +31,50 @@ Upload() {
 # Make flashable zip
 MakeZip() {
     if [ ! -d $Any ]; then
-        git clone https://github.com/noobbeast/AnyKernel3.git -b master $Any
+        git clone https://github.com/DexterNoob/AnyKernel3 -b r $Any
         cd $Any
     else
         cd $Any
         git reset --hard
-        git checkout master
-        git fetch origin master
-        git reset --hard origin/master
+        git checkout r
+        git fetch origin r
+        git reset --hard origin/r
     fi
     cp -af $MainPath/out/arch/arm64/boot/Image.gz-dtb $Any
     sed -i "s/kernel.string=.*/kernel.string=$KERNEL_NAME-$HeadCommit test by $KBUILD_BUILD_USER/g" anykernel.sh
-    zip -r9 $MainPath/"$ZIP_KERNEL_VERSION-$KERNEL_NAME-$Compiler.zip" * -x .git README.md *placeholder
+    zip -r9 $MainPath/"[$Compiler][13]-$ZIP_KERNEL_VERSION-$KERNEL_NAME-$TIME.zip" * -x .git README.md *placeholder
     cd $MainPath
 }
 
-
-Clone_Dexter() {
+# Clone compiler
+Clone_GCC() {
     if [ $UT = 1 ]; then
-        Text="========================
-               Clone Compiler🐒
-========================"
+        Text="Clone compiler"
         msg
     fi
-    if [ ! -d $Dexter ]; then
-        git clone --depth=1 https://gitlab.com/fajarputro72/dexterclang.git -b 15.0.4 $Dexter
+    if [ ! -d $GCC64 ]; then
+        git clone --depth=1 https://github.com/mvaisakh/gcc-arm64 -b gcc-master $GCC64
     else
-        cd $Dexter
-        git fetch origin 15.0.4
-        git checkout 15.0.4
-        git branch -D 15.0.4
-        git branch 15.0.4 && git checkout 15.0.4
+        cd $GCC64
+        git fetch origin gcc-master
+        git checkout FETCH_HEAD
+        git branch -D gcc-master
+        git branch gcc-master && git checkout gcc-master
         cd $MainPath
     fi
-    Dexter_Version="$($Dexter/bin/clang --version | grep clang)"
+    GCC64_Version="$($GCC64/bin/*gcc --version | grep gcc)"
+
+    if [ ! -d $GCC ]; then
+        git clone --depth=1 https://github.com/mvaisakh/gcc-arm -b gcc-master $GCC
+    else
+        cd $GCC
+        git fetch origin gcc-master
+        git checkout FETCH_HEAD
+        git branch -D gcc-master
+        git branch gcc-master && git checkout gcc-master
+        cd $MainPath
+    fi
+    GCC_Version="$($GCC/bin/*gcc --version | grep gcc)"
 }
 
 # Defined config
@@ -71,18 +82,16 @@ HeadCommit="$(git log --pretty=format:'%h' -1)"
 export ARCH="arm64"
 export SUBARCH="arm64"
 export KBUILD_BUILD_USER="Noobbeast"
-export KBUILD_BUILD_HOST="PowerEdge"
-DATE=$(TZ=Asia/Jakarta date +"%H%M-%d%m%y")
+export KBUILD_BUILD_HOST="henks"
 Defconfig="begonia_user_defconfig"
 KERNEL_NAME=$(cat "$MainPath/arch/arm64/configs/$Defconfig" | grep "CONFIG_LOCALVERSION=" | sed 's/CONFIG_LOCALVERSION="-*//g' | sed 's/"*//g' )
 ZIP_KERNEL_VERSION="4.14.$(cat "$MainPath/Makefile" | grep "SUBLEVEL =" | sed 's/SUBLEVEL = *//g')$(cat "$(pwd)/Makefile" | grep "EXTRAVERSION =" | sed 's/EXTRAVERSION = *//g')"
 
-Build_Dexter() {
-    Compiler=Begonia-Clang-A13
+# Start building
+Build_GCC() {
+    Compiler=GCC-LTO
     if [ $UT = 1 ]; then
-        Text="========================
- <b>Device</b>: <code>Redmi Note 8 Pro </code>%0A<b>Branch</b>: <code>$(git branch | grep '*' | awk '{ print $2 }')</code>%0A<b>Kernel name</b>: <code>$(cat "arch/arm64/configs/begonia_user_defconfig" | grep "CONFIG_LOCALVERSION=" | sed 's/CONFIG_LOCALVERSION="-*//g' | sed 's/"*//g' )</code>%0A<b>Kernel version</b>: <code>4.14.$(cat "Makefile" | grep "SUBLEVEL =" | sed 's/SUBLEVEL = *//g')</code>%0A<b>Build user</b>: <code>$KBUILD_BUILD_USER</code>%0A<b>Build host</b>: <code>$KBUILD_BUILD_HOST</code>%0A<b>Compiler</b>:%0A<code>$Dexter_Version</code>%0A<b>Changelogs</b>:%0A<code>$(git log --oneline -5 --no-decorate)</code>
- ========================🐒"
+        Text="<b>Device</b>: <code>Redmi Note 8 Pro [BEGONIA]</code>%0A<b>Branch</b>: <code>$(git branch | grep '*' | awk '{ print $2 }')</code>%0A<b>Kernel name</b>: <code>$(cat "arch/arm64/configs/begonia_user_defconfig" | grep "CONFIG_LOCALVERSION=" | sed 's/CONFIG_LOCALVERSION="-*//g' | sed 's/"*//g' )</code>%0A<b>Kernel version</b>: <code>4.14.$(cat "Makefile" | grep "SUBLEVEL =" | sed 's/SUBLEVEL = *//g')</code>%0A<b>Build user</b>: <code>$KBUILD_BUILD_USER</code>%0A<b>Build host</b>: <code>$KBUILD_BUILD_HOST</code>%0A<b>Cross compile</b>:%0A<code>$GCC64_Version</code>%0A<b>Cross compile arm32</b>:%0A<code>$GCC_Version</code>%0A<b>Changelogs</b>:%0A<code>$(git log --oneline -5 --no-decorate)</code>"
         msg
     fi
     rm -rf out
@@ -92,23 +101,15 @@ Build_Dexter() {
     make  -j$(nproc --all)  O=out ARCH=arm64 SUBARCH=arm64 $Defconfig
     exec 2> >(tee -a out/error.log >&2)
     make  -j$(nproc --all)  O=out \
-                            PATH="$Dexter/bin:/usr/bin:$PATH" \
-                            CC=clang \
-                            AR=llvm-ar \
-        		    AS=llvm-as \
+                            PATH="$GCC64/bin:$GCC/bin:/usr/bin:$PATH" \
+                            AR=aarch64-elf-ar \
                             NM=llvm-nm \
-                            HOSTCC=clang \
-                            HOSTCXX=clang++ \
-                            STRIP=llvm-strip \
-                            OBJCOPY=llvm-objcopy \
-                            OBJDUMP=llvm-objdump \
-                            READELF=llvm-readelf \
-                            OBJSIZE=llvm-size \
-                            STRIP=llvm-strip \
-                            TRIPLE=aarch64-linux-gnu- \
-			    LD=ld.lld \
-                            CROSS_COMPILE=aarch64-linux-gnu- \
-                            CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+                            LD=aarch64-elf-ld \
+                            OBCOPY=llvm-objcopy \
+                            OBJDUMP=aarch64-elf-objdump \
+                            STRIP=aarch64-elf-strip \
+                            CROSS_COMPILE=aarch64-elf- \
+                            CROSS_COMPILE_ARM32=arm-eabi-
 }
 
 # End with success or fail
@@ -140,17 +141,14 @@ End() {
     fi
 }
 
-Text=" ========================
-      New Kernel On the Way Cok 🐒
-========================"
+Text="Start to build kernel"
+
 # Build choices
-Dexter() {
+GCC() {
     if [ $UT = 1 ]; then
         msg
     fi
-    Clone_Dexter
-    Build_Dexter
+    Clone_GCC
+    Build_GCC
     End
 }
-
-
